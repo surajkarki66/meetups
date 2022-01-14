@@ -1,40 +1,42 @@
+import { Fragment } from "react";
+import Head from "next/head";
+import { MongoClient } from "mongodb";
 import MeetupList from "../components/meetups/MeetupList";
 
-const DUMMY_MEETUPS = [
-  {
-    id: "m1",
-    title: "A first meetup",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Claw_Fountain_at_Stanford_Univerisity.JPG/1280px-Claw_Fountain_at_Stanford_Univerisity.JPG",
-    address: "Standford 5, 12345 California",
-    description: "This is our first meetup.",
-  },
-  {
-    id: "m2",
-    title: "A second meetup",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Claw_Fountain_at_Stanford_Univerisity.JPG/1280px-Claw_Fountain_at_Stanford_Univerisity.JPG",
-    address: "Standford 5, 12345 California",
-    description: "This is our second meetup.",
-  },
-  {
-    id: "m3",
-    title: "A third meetup",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Claw_Fountain_at_Stanford_Univerisity.JPG/1280px-Claw_Fountain_at_Stanford_Univerisity.JPG",
-    address: "Standford 5, 12345 California",
-    description: "This is our third meetup.",
-  },
-];
-
 function HomePage(props) {
-  return <MeetupList meetups={props.meetups} />;
+  return (
+    <Fragment>
+      <Head>
+        <title>Meetups</title>
+        <meta
+          name="description"
+          content="This is a meetup management site built in Nextjs."
+        />
+      </Head>
+      <MeetupList meetups={props.meetups} />
+    </Fragment>
+  );
 }
 export async function getStaticProps() {
   /* Fetch data from API */
+  /* Fetching data from own API host by nextjs is quite redundant here, so we directly implemented */
+  const client = await MongoClient.connect(
+    "mongodb+srv://meetup:0Gjh9zUEufEQbAgC@cluster0.bnjny.mongodb.net/meetup?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+  const meetupsCollection = db.collection("meetups");
+
+  const meetups = await meetupsCollection.find().toArray();
+  client.close();
+
   return {
     props: {
-      meetups: DUMMY_MEETUPS,
+      meetups: meetups.map((meetup) => ({
+        title: meetup.title,
+        address: meetup.address,
+        image: meetup.image,
+        id: meetup._id.toString(),
+      })),
     },
     revalidate: 1,
   };
